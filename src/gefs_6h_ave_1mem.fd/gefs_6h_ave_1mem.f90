@@ -252,19 +252,37 @@ program gefs_6h_ave_1mem
 
          if (pabbrev=='PRES' .or. pabbrev=='TMP') then
            do i=1,maxgrd
-           if (var_save(i,2).eq.0.0.and.var_save(i,3).eq.0.0) var_save_acc(i)=var_save(i,3)
-           if (var_save(i,2).eq.0.0.and.var_save(i,3).gt.0.0) var_save_acc(i)=var_save(i,3)
-           if (var_save(i,2).gt.0.0.and.var_save(i,3).eq.0.0) var_save_acc(i)=var_save(i,2)
-           if (var_save(i,2).gt.0.0.and.var_save(i,3).gt.0.0) var_save_acc(i)=(var_save(i,2)+var_save(i,3))/2.
-           enddo
-         endif
+
+           if (var_save(i,2).eq.0.0.and.var_save(i,3).eq.0.0) then
+               var_save_acc(i)=var_save(i,3)
+               gfldo%bmap(i)=.false.
+           endif
+
+           if (var_save(i,2).eq.0.0.and.var_save(i,3).gt.0.0) then
+               var_save_acc(i)=var_save(i,3)
+               gfldo%bmap(i)=.false.
+           endif
+
+           if (var_save(i,2).gt.0.0.and.var_save(i,3).eq.0.0) then
+               var_save_acc(i)=var_save(i,2)
+               gfld%bmap(i)=.true.
+               gfldo%bmap(i)=.true.
+           endif
+
+           if (var_save(i,2).gt.0.0.and.var_save(i,3).gt.0.0) then
+               var_save_acc(i)=(var_save(i,2)+var_save(i,3))/2.
+               gfldo%bmap(i)=.true.
+           endif
+
+          enddo
+        endif
 
          if (pabbrev=='ALBDO') then
            do i=1,maxgrd
            var_save_acc(i)=0.0
            if (var_save_DSWRF(i) .gt. 0.01 .and. var_save_USWRF(i).gt.0.01) then
                 var_save_acc(i)=100.*var_save_USWRF(i)/var_save_DSWRF(i)
-                if(var_save_acc(i) .gt. 100) var_save_acc(i)=0.0
+                if(var_save_acc(i) .gt. 100) var_save_acc(i)=100.0
            endif
            enddo
          endif
@@ -336,13 +354,13 @@ program gefs_6h_ave_1mem
 
 !output 3-h variables
 
-       gfld%fld=var_save_acc(:)
+       gfldo%fld=var_save_acc(:)
 !reassign the ipdtmpl
-       gfld%ipdtmpl(9)=0 !forecast time
-       gfld%ipdtmpl(22)=3 !forecast time
-       gfld%ipdtmpl(30)=3 !forecast time
+       gfldo%ipdtmpl(9)=0 !forecast time
+       gfldo%ipdtmpl(22)=3 !forecast time
+       gfldo%ipdtmpl(30)=3 !forecast time
        jret=0
-       call putgb2(300,gfld,jret)
+       call putgb2(300,gfldo,jret)
 
        write(*,*) '300 put',jret,gfldo%ipdtmpl
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
