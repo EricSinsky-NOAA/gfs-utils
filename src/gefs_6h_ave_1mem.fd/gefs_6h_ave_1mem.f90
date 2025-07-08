@@ -119,6 +119,7 @@ program gefs_6h_ave_1mem
       real, allocatable :: apcp_3h(:) ! (maxgrd)
       real, allocatable :: acpcp_3h(:) ! (maxgrd)
       real, allocatable :: dpcp(:) ! (maxgrd)
+      logical, allocatable :: bmap(:) ! (maxgrd)
 
 
       call GET_COMMAND_ARGUMENT(1, file_date)
@@ -194,6 +195,7 @@ program gefs_6h_ave_1mem
       if(.not. allocated(acpcp_6h)) allocate(acpcp_6h(maxgrd))
       if(.not. allocated(dpcp)) allocate(dpcp(maxgrd))
       if(.not. allocated(var_save)) allocate(var_save(maxgrd,3))
+      if(.not. allocated(bmap)) allocate(bmap(maxgrd))
 
        var_save(:,nfi) = gfld%fld
        year  = gfld%idsect(6)
@@ -255,23 +257,23 @@ program gefs_6h_ave_1mem
 
            if (var_save(i,2).eq.0.0.and.var_save(i,3).eq.0.0) then
                var_save_acc(i)=var_save(i,3)
-               gfldo%bmap(i)=.false.
+               bmap(i)=.false.
            endif
 
            if (var_save(i,2).eq.0.0.and.var_save(i,3).gt.0.0) then
                var_save_acc(i)=var_save(i,3)
-               gfldo%bmap(i)=.false.
+               bmap(i)=.false.
            endif
 
            if (var_save(i,2).gt.0.0.and.var_save(i,3).eq.0.0) then
                var_save_acc(i)=var_save(i,2)
                gfld%bmap(i)=.true.
-               gfldo%bmap(i)=.true.
+               bmap(i)=.true.
            endif
 
            if (var_save(i,2).gt.0.0.and.var_save(i,3).gt.0.0) then
                var_save_acc(i)=(var_save(i,2)+var_save(i,3))/2.
-               gfldo%bmap(i)=.true.
+               bmap(i)=.true.
            endif
 
           enddo
@@ -353,7 +355,9 @@ program gefs_6h_ave_1mem
        end if
 
 !output 3-h variables
-
+       if (pabbrev=='PRES' .or. pabbrev=='TMP') then
+          gfldo%bmap(1:maxgrd)=bmap(1:maxgrd)
+       endif   
        gfldo%fld=var_save_acc(:)
 !reassign the ipdtmpl
        gfldo%ipdtmpl(9)=0 !forecast time
@@ -369,6 +373,7 @@ program gefs_6h_ave_1mem
 
       deallocate(var_save_acc)
       deallocate(var_save)
+      deallocate(bmap)
        if(ifid.eq.38) then
           deallocate(var_save_DSWRF)
           deallocate(var_save_USWRF)
